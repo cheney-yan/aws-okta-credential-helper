@@ -99,7 +99,6 @@ def collect_okta_info(settings):
 
 def create_profiles(settings):
     saml_dict = refresh_saml_resp(settings)
-    print(saml_dict)
     log.debug("You have permissions to these roles: %s", saml_dict['RoleArns'])
     config = configparser.RawConfigParser()
     if not os.path.isfile(settings.aws_credentials_file_path):
