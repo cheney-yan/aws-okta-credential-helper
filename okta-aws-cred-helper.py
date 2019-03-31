@@ -99,6 +99,7 @@ def collect_okta_info(settings):
 
 def create_profiles(settings):
     saml_dict = refresh_saml_resp(settings)
+    print(saml_dict)
     log.debug("You have permissions to these roles: %s", saml_dict['RoleArns'])
     config = configparser.RawConfigParser()
     if not os.path.isfile(settings.aws_credentials_file_path):
@@ -111,11 +112,9 @@ def create_profiles(settings):
         log.debug('Existing sections, %s', config.sections())
         for role in saml_dict['RoleArns'].keys():
             section = get_role_key(role)
-            if not config.has_section(section):
-                config.add_section(section)
-            else:
+            if config.has_section(section):
                 config.remove_section(section)
-                config.add_section(section)
+            config.add_section(section)
             config.set(section, 'credential_process',
                        ' '.join('"%s"' % p for p in (
                            sys.executable,
