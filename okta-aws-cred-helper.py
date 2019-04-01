@@ -126,7 +126,7 @@ def create_profiles(settings):
         log.debug('Refresh profile section %s', section)
         log.debug('Add an empty profile to avoid a potential dead lock')
         if not config.has_section('okta-empty'):
-                config.add_section('okta-empty')
+            config.add_section('okta-empty')
     log.debug("Updating AWS credentials file: %s", settings.aws_credentials_file_path)
     with open(settings.aws_credentials_file_path, 'w') as wf:
         config.write(wf)
@@ -329,7 +329,7 @@ def get_role_key(role_arn):
     if role_name.startswith('role/'):
         role_name = role_name[5:]
     role_name = re.sub('[^0-9a-zA-Z]+', '-', role_name)
-    return '%s-%s' % (acc_id, role_name)
+    return 'okta-%s-%s' % (acc_id, role_name)
 
 
 def _refresh_credentials(role, settings):
@@ -348,8 +348,39 @@ def _refresh_credentials(role, settings):
     return aws_creds
 
 
-def get_credential(role, settings):
+def get_credential(role, settings, return_value=False):
     cache_file = os.path.join(settings.work_dir, get_role_key(role))
+    creds_refreshed = True
+    if os.path.isfile(cache_file):
+        try:
+            with open(cache_file) as f:
+                aws_creds = json.loads(f.read())
+            ttl = aws_creds['_ExpireEpoch']-datetime.datetime.now().timestamp()
+            if ttl < 30:  # about to expire within 30 seconds
+                log.debug("Cached credential expired. Need to refresh.")
+            else:
+                creds_refreshed = False
+                if return_value:
+                  return aws_creds
+                else:
+                  print(json.dumps(aws_creds, default=str))
+                  return
+        except:
+            log.warning("Current cache '%s' does not seem valid. Need to refresh.", cache_file)
+    aws_creds = _refresh_credentials(role, settings)
+    log.debug('Retrieved new sid and saved it.')
+    if creds_refreshed:
+        with open(cache_file, 'w') as f:
+            f.write(json.dumps(aws_creds, default=str))
+        os.chmod(cache_file, mode=0o600)
+    if return_value:
+        return aws_creds
+    else:
+        print(json.dumps(aws_creds, default=str))
+
+
+def get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settings):
+    cache_file = os.path.join(settings.work_dir, get_role_key(to_role_arn))
     creds_refreshed = True
     if os.path.isfile(cache_file):
         try:
@@ -363,15 +394,29 @@ def get_credential(role, settings):
                 print(json.dumps(aws_creds, default=str))
                 return
         except:
-            log.warn("Current cache '%s' does not seem valid. Need to refresh.", cache_file)
-    aws_creds = _refresh_credentials(role, settings)
-    log.debug('Retrieved new sid and saved it.')
+            log.warning("Current cache '%s' does not seem valid. Need to refresh.", cache_file)
+
+    if from_profile:
+        client = boto3.session.Session(profile_name=from_profile).client('sts')
+    else:
+        creds = get_credential(from_role_arn, settings, return_value=True)
+        client = boto3.session.Session(
+            aws_access_key_id=creds['AccessKeyId'],
+            aws_secret_access_key=creds['SecretAccessKey'],
+            aws_session_token=creds['SessionToken']
+        ).client('sts')
+    aws_creds = client.assume_role(
+        RoleArn=to_role_arn,
+        RoleSessionName='okta-aws',
+    )['Credentials']
+    aws_creds['Version']=1
+    aws_creds['SecurityToken'] = aws_creds['SessionToken']
+    aws_creds['_ExpireEpoch'] = aws_creds['Expiration'].timestamp()
     if creds_refreshed:
         with open(cache_file, 'w') as f:
             f.write(json.dumps(aws_creds, default=str))
         os.chmod(cache_file, mode=0o600)
     print(json.dumps(aws_creds, default=str))
-
 
 @cli.command()
 @click.pass_obj
@@ -395,6 +440,22 @@ def refresh(settings):
 @click.option('--role-arn', help='The AWS Role Arn to get temporary credential of.')
 def get_cred(settings, role_arn):
     get_credential(role_arn, settings)
+
+
+@cli.command()
+@click.pass_obj
+@click_log.simple_verbosity_option(log)
+@click.option('--from-role-arn', help='The Root AWS role.', default=None)
+@click.option('--from-profile', help='The Root AWS profile.', default=None)
+@click.option('--to-role-arn', help='The AWS Role to be assumed to.')
+def assume_role(settings, from_role_arn, from_profile, to_role_arn):
+    if not from_role_arn and not from_profile:
+        log.error("Must provide either from-role-arn or from-profile.")
+        sys.exit(1)
+    if from_role_arn and from_profile:
+        log.error("Can't provide both from-role-arn and from-profile.")
+        sys.exit(1)
+    get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settings)
 
 
 if __name__ == '__main__':
