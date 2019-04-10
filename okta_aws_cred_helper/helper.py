@@ -52,7 +52,7 @@ class Settings(object):
         self.cache_dir = os.path.join(self.work_dir, 'cache')
         self.config = 'keychain'  # only key chain is supported
         self.aws_credentials_file_path = os.path.expanduser(aws_credentials_file_path)
-        self.keyring_app_name = 'okta_aws_auth_helper'
+        self.keyring_app_name = 'okta_aws_auth_helper2'
         self.sso_url = keyring.get_password(self.keyring_app_name, "sso_url")
         self.region = keyring.get_password(self.keyring_app_name, "region")
         self.user_name = keyring.get_password(self.keyring_app_name, "user_name")

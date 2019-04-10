@@ -7,8 +7,10 @@ Currently it only works on Mac. As it is pure python, welcome to extend it for o
 # Install
 
 ```
+pip install git+https://github.com/cheney-yan/aws-okta-credential-helper@master
 
 ```
+TODO: https://github.com/jaraco/keyring/issues/219 
 
 # Initialize
 
@@ -64,3 +66,4 @@ The following items are in the view:
 - Support linux(ubuntu)
 - add a easy role assumption support
 - Allow signing Login URLs (working with [awslogin](https://github.com/cheney-yan/awslogin))
+- Package properly and add testing
