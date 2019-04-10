@@ -53,12 +53,11 @@ class Settings(object):
         self.config = 'keychain'  # only key chain is supported
         self.aws_credentials_file_path = os.path.expanduser(aws_credentials_file_path)
         self.keyring_app_name = 'okta_aws_auth_helper'
-        self.provider_url = keyring.get_password(self.keyring_app_name, "provider_url")
         self.sso_url = keyring.get_password(self.keyring_app_name, "sso_url")
         self.region = keyring.get_password(self.keyring_app_name, "region")
         self.user_name = keyring.get_password(self.keyring_app_name, "user_name")
         self.password = keyring.get_password(self.keyring_app_name, "password")
-        self.google_2fa_seed = keyring.get_password(self.keyring_app_name, "google_2fa_seed")
+        self.google_2fa_totp = keyring.get_password(self.keyring_app_name, "google_2fa_totp")
 
 
 @click.group()
@@ -72,27 +71,28 @@ def cli(ctx, home, aws_credentials_file_path):
 def collect_okta_info(settings):
     log.debug('working dir: %s', settings.work_dir)
     # interactive way of creating keyring
-    sso_url = input("Please input your oka app provider url. (It should be like https://<company>.okta.com/home/amazon_aws/<app-id>/sso/saml. For Domain, it is https://domain.okta.com/app/amazon_aws/exknj7gedfU7s4FB8355/sso/saml). Current value: %s\n" % settings.sso_url)
+    sso_url = input("Please input your oka app sso url. (It should be like https://<company>.okta.com/home/amazon_aws/<app-id>/sso/saml. For Domain, it is https://domain.okta.com/app/amazon_aws/exknj7gedfU7s4FB8355/sso/saml). Current value: %s\n" % settings.sso_url)
     if sso_url:
         settings.sso_url = sso_url
     region = input("Please input AWS region. If not provided, it will be ap-southeast-2. Current value: %s\n" % settings.region)
-    if region:
-        settings.region = 'ap-southeast-2'
+    if not region:
+        settings.region = 'ap-southeast-2' if not settings.region else settings.region
+    else:
+        settings.region = region
     user_name = input("Please provide okta user name, (your email address). Current value: %s \n" % settings.user_name)
     if user_name:
         settings.user_name = user_name
     settings.password = input("Please provide okta password. Must re-input every time you execute this: \n")
-    google_2fa_seed = input(
+    google_2fa_totp = input(
         "Please provide Google App TOTP token (You can use a QR code reader to scan your google 2FA barchar code while you are setting up your 2FA). No input means no change to current value. \n")
-    if google_2fa_seed:
-        settings.google_2fa_seed = google_2fa_seed
+    if google_2fa_totp:
+        settings.google_2fa_totp = google_2fa_totp
     log.info("Writting above information into OSX keychain...")
-    keyring.set_password(settings.keyring_app_name, "provider_url", settings.provider_url)
     keyring.set_password(settings.keyring_app_name, "sso_url", settings.sso_url)
     keyring.set_password(settings.keyring_app_name, "region", settings.region)
     keyring.set_password(settings.keyring_app_name, "user_name", settings.user_name)
     keyring.set_password(settings.keyring_app_name, "password", settings.password)
-    keyring.set_password(settings.keyring_app_name, "google_2fa_seed", settings.google_2fa_seed)
+    keyring.set_password(settings.keyring_app_name, "google_2fa_totp", settings.google_2fa_totp)
 
     return settings
 
@@ -180,7 +180,7 @@ def _factorGoogle(factor_url, factor_name, stateToken, settings):
     send_response = session.post(factor_url, data=json.dumps(payload), verify=True)
 
     if send_response.status_code == 200:
-        passcode = get_totp_token(totp_secret=settings.google_2fa_seed)
+        passcode = get_totp_token(totp_secret=settings.google_2fa_totp)
         payload = {'stateToken': stateToken, 'passCode': passcode}
 
         verify_response = session.post(factor_url, data=json.dumps(payload), verify=True)

@@ -1,0 +1,9 @@
+boto3
+click==7.0
+click-log==0.3.2
+sh
+keyring
+python-dateutil
+bs4
+simplejson
+requests[security]
