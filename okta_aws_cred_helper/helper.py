@@ -49,15 +49,30 @@ class Settings(object):
         if not os.path.isdir(self.work_dir):
             os.makedirs(self.work_dir)
         self.okta_sid = os.path.join(self.work_dir, 'okta_sid')
-        self.cache_dir = os.path.join(self.work_dir, 'cache')
-        self.config = 'keychain'  # only key chain is supported
         self.aws_credentials_file_path = os.path.expanduser(aws_credentials_file_path)
-        self.keyring_app_name = 'okta_aws_auth_helper2'
-        self.sso_url = keyring.get_password(self.keyring_app_name, "sso_url")
-        self.region = keyring.get_password(self.keyring_app_name, "region")
-        self.user_name = keyring.get_password(self.keyring_app_name, "user_name")
-        self.password = keyring.get_password(self.keyring_app_name, "password")
-        self.google_2fa_totp = keyring.get_password(self.keyring_app_name, "google_2fa_totp")
+        self.okta_aws_settings_path = os.path.join(self.work_dir, 'settings.json')
+        try:
+            with open(self.okta_aws_settings_path) as f:
+                config = json.load(f)
+        except:
+            config = {}
+        self.sso_url = config.get("sso_url", '')
+        self.region = config.get("region", '')
+        self.user_name = config.get("user_name", '')
+        self.password = config.get("password", '')
+        self.google_2fa_totp = config.get("google_2fa_totp", '')
+
+    def save(self):
+        with open(self.okta_aws_settings_path, 'w') as f:
+            f.write(json.dumps({
+                'sso_url': self.sso_url,
+                'region': self.region,
+                'user_name': self.user_name,
+                'password': self.password,
+                'google_2fa_totp': self.google_2fa_totp,
+
+            }, indent=2))
+        os.chmod(self.okta_aws_settings_path, mode=0o600)
 
 
 @click.group()
@@ -88,11 +103,7 @@ def collect_okta_info(settings):
     if google_2fa_totp:
         settings.google_2fa_totp = google_2fa_totp
     log.info("Writting above information into OSX keychain...")
-    keyring.set_password(settings.keyring_app_name, "sso_url", settings.sso_url)
-    keyring.set_password(settings.keyring_app_name, "region", settings.region)
-    keyring.set_password(settings.keyring_app_name, "user_name", settings.user_name)
-    keyring.set_password(settings.keyring_app_name, "password", settings.password)
-    keyring.set_password(settings.keyring_app_name, "google_2fa_totp", settings.google_2fa_totp)
+    settings.save()
 
     return settings
 
@@ -361,10 +372,10 @@ def get_credential(role, settings, return_value=False):
             else:
                 creds_refreshed = False
                 if return_value:
-                  return aws_creds
+                    return aws_creds
                 else:
-                  print(json.dumps(aws_creds, default=str))
-                  return
+                    print(json.dumps(aws_creds, default=str))
+                    return
         except:
             log.warning("Current cache '%s' does not seem valid. Need to refresh.", cache_file)
     aws_creds = _refresh_credentials(role, settings)
@@ -409,7 +420,7 @@ def get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settin
         RoleArn=to_role_arn,
         RoleSessionName='okta-aws',
     )['Credentials']
-    aws_creds['Version']=1
+    aws_creds['Version'] = 1
     aws_creds['SecurityToken'] = aws_creds['SessionToken']
     aws_creds['_ExpireEpoch'] = aws_creds['Expiration'].timestamp()
     if creds_refreshed:
@@ -417,6 +428,7 @@ def get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settin
             f.write(json.dumps(aws_creds, default=str))
         os.chmod(cache_file, mode=0o600)
     print(json.dumps(aws_creds, default=str))
+
 
 @cli.command()
 @click.pass_obj
