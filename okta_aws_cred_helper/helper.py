@@ -127,8 +127,7 @@ def create_profiles(settings):
             config.add_section(section)
             config.set(section, 'credential_process',
                        ' '.join('"%s"' % p for p in (
-                           sys.executable,
-                           sys.argv[0],
+                           'okta-aws-cred-helper',
                            'get-cred',
                            '--role-arn',
                            role,
@@ -450,8 +449,9 @@ def refresh(settings):
 @click.pass_obj
 @click_log.simple_verbosity_option(log)
 @click.option('--role-arn', help='The AWS Role Arn to get temporary credential of.')
-def get_cred(settings, role_arn):
-    get_credential(role_arn, settings)
+@click.option('--print-only/--no-print-only', default=False, help='Print value to console')
+def get_cred(settings, role_arn, print_only):
+    get_credential(role_arn, settings, return_value=not print_only)
 
 
 @cli.command()
