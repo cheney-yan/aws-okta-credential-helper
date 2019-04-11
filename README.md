@@ -47,9 +47,8 @@ Execute
 okta-aws-cred-helper init
 ```
 
-Follow the questions and input your answers. **You will be asked for sso_url, okta username(email), okta password, totp code (you previously marked down). Note whatever you have input will be echo back to the screen. Pleae keep alert from peeping.**
+Follow the questions and input your answers. **You will be asked for sso_url, okta username(email), okta password, totp code (you previously marked down). Note whatever you have input will be echo back to the screen. Please keep alert from peeping.**
 
-**As this app uses MacOS keychain to store the above secret information, you will be prompt that your current python executor wants to use your credentials. It is ideal to `always allow` python process.**
 
 ### review your okta credentials settings
 
