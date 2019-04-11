@@ -70,7 +70,7 @@ Once initialized, the file should be like
 
 Execute
 ```
-okta-aws-cred-helper init
+okta-aws-cred-helper refresh
 ```
 
 This command will modify your `~/.aws/credentials` for the new credentials derived from okta. The credentials from Okta will be defined as profiles with name starting with `okta-`. 
