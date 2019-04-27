@@ -337,11 +337,13 @@ def load_aliases(file=None):
     with open(file) as f:
       data = yaml.load(f, Loader=yaml.SafeLoader)
       return data['aliases']
-aliases = load_aliases()
+aliases = None
 
 def get_role_key(role_arn):
     # convert role arn into <acc-id>-<rolepaths>
     global aliases
+    if aliases is None:
+      aliases = load_aliases()
     tokens = role_arn.split(':')
     acc_id = aliases.get(tokens[-2], tokens[-2]).lower()
     role_name = tokens[-1]
@@ -437,12 +439,6 @@ def get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settin
         os.chmod(cache_file, mode=0o600)
     print(json.dumps(aws_creds, default=str))
 
-def load_aliases(file=None):
-    if not file:
-      file = os.path.join(os.path.dirname(__file__), 'data.yaml')
-    with open(file) as f:
-      data = yaml.load(f, Loader=yaml.SafeLoader)
-      return data['aliases']
 @cli.command()
 @click.pass_obj
 @click_log.simple_verbosity_option(log)
