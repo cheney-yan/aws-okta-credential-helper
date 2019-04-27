@@ -22,6 +22,7 @@ import click_log
 import click
 import time
 import keyring
+import yaml
 log = logging.getLogger(__name__)
 click_log.basic_config(log)
 
@@ -330,11 +331,19 @@ def _get_sts_token(RoleArn, PrincipalArn, SAMLAssertion):
     Credentials = response['Credentials']
     return Credentials
 
+def load_aliases(file=None):
+    if not file:
+      file = os.path.join(os.path.dirname(__file__),'data', 'data.yaml')
+    with open(file) as f:
+      data = yaml.load(f, Loader=yaml.SafeLoader)
+      return data['aliases']
+aliases = load_aliases()
 
 def get_role_key(role_arn):
     # convert role arn into <acc-id>-<rolepaths>
+    global aliases
     tokens = role_arn.split(':')
-    acc_id = tokens[-2]
+    acc_id = aliases.get(tokens[-2], tokens[-2]).lower()
     role_name = tokens[-1]
     if role_name.startswith('role/'):
         role_name = role_name[5:]
@@ -428,7 +437,12 @@ def get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settin
         os.chmod(cache_file, mode=0o600)
     print(json.dumps(aws_creds, default=str))
 
-
+def load_aliases(file=None):
+    if not file:
+      file = os.path.join(os.path.dirname(__file__), 'data.yaml')
+    with open(file) as f:
+      data = yaml.load(f, Loader=yaml.SafeLoader)
+      return data['aliases']
 @cli.command()
 @click.pass_obj
 @click_log.simple_verbosity_option(log)
