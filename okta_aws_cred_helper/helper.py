@@ -334,9 +334,14 @@ def _get_sts_token(RoleArn, PrincipalArn, SAMLAssertion):
 def load_aliases(file=None):
     if not file:
       file = os.path.join(os.path.dirname(__file__),'data', 'data.yaml')
-    with open(file) as f:
-      data = yaml.load(f, Loader=yaml.SafeLoader)
-      return data['aliases']
+    try:
+      with open(file) as f:
+        data = yaml.load(f, Loader=yaml.SafeLoader)
+        return data['aliases']
+    except:
+      log.warning('Failed to load file %s, continue', file)
+      return {}
+
 aliases = None
 
 def get_role_key(role_arn):
