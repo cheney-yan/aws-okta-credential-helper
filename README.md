@@ -18,8 +18,7 @@ okta-aws-cred-helper refresh
 # Install
 
 ```
-pip install git+https://github.com/cheney-yan/aws-okta-credential-helper@master
-
+pip install okta-aws-credential-helper
 ```
 
 # Initialize
