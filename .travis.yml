@@ -11,3 +11,5 @@ deploy:
     branch: master
 install:
   - python setup.py install
+script:
+  - tox
