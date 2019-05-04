@@ -35,7 +35,7 @@ def find_package_data_files(dir, package_name):
     return result
 
 def find_dependencies():
-  with open(path.join(here,'requirements.in')) as f:
+  with open(path.join(here,'requirements.txt')) as f:
     return f.read().split()
 
 REQUIREMENTS = find_dependencies()
