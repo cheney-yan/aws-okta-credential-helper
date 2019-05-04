@@ -1,0 +1,11 @@
+language: python
+python:
+- '3.7'
+deploy:
+  provider: pypi
+  user: cheneyyan
+  password:
+    secure: IIbbf341LWxRsEIyi7v/NrQNoiMpo9TgYI1CBof6X40buIuPalcPWD6IFRTYyQdC/8r4jhQVlPSkKU37n2/rILjIr+7TCA6ACn42Fmsez9KgnTgu/ImZwT/EZdcu5Vr8z40PdcY1/ElcD4BPkYPNJDWS1VFIYLCzmHvQoZ0s+XtEMp/DdKmNExpalQVaLYmknsUs6iPAzfDLY1h0qT1CGmBpClRrxD688jA8JprUm+/YEQu+CXku4bkYI5hInCvoRByiNX0pfTM0cQGhDSVJHzpzrWtYSuHz2RBNRvgQNQWRB0rweoycsoXmJfbjc/PbVKAJ3n9wPP/ZJ8IA6FfxXc1mqcCz++9ZGRhlq/YM8Vto779WnGhKW5Nt8NSDSyi3pTdTHjlnwvSKj6MiHHkC90rLyICt3dR0/3XuVbMN1ruR6otM0/LUjn6KZk/s5Gd5NuOtFkQH3jkEHjfo9kMrIpfXPsB+7Ncj4lfoha1ReA9sxAwdhWUdc2nYFv5qXVUrWJP0DEFqyfVxMosSNiwNN6UrNKTP84S57/a+fs5yYb0rI2WkAL5SUUvlpm6Zgtnx73IUDLs+vcpM5H7bLVNfxg3aJuQCUvWGuaghCDWFANtme+rwrTP19P1ZierXCMpgRbc9zNbygW/bFFCextkR/+w42OmrHn/Pz5qYEo8g9MI=
+  on:
+    tags: true
+    branch: master
