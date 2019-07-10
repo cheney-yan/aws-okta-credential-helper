@@ -16,29 +16,37 @@ all_docs = glob.glob(path.join(here, 'docs', '*')) + \
 
 long_description = ''
 for doc in all_docs:
-    with open(doc, encoding='utf-8') as f:
-        long_description += f.read()
-        long_description += "\n\n---\n\n"
+  with open(doc, encoding='utf-8') as f:
+    long_description += f.read()
+    long_description += "\n\n---\n\n"
 
 
 def find_package_data_files(dir, package_name):
-    result = list()
-    files = listdir(dir)
-    for entry in files:
-        full_path = path.join(dir, entry)
-        if path.isdir(full_path):
-            result = result + find_package_data_files(full_path, None)
-        else:
-            result.append(full_path)
-    if package_name:
-        result = [f.replace('%s/' % package_name, '', 1) for f in result]
-    return result
+  result = list()
+  files = listdir(dir)
+  for entry in files:
+    full_path = path.join(dir, entry)
+    if path.isdir(full_path):
+      result = result + find_package_data_files(full_path, None)
+    else:
+      result.append(full_path)
+  if package_name:
+    result = [f.replace('%s/' % package_name, '', 1) for f in result]
+  return result
 
-def find_dependencies():
-  with open(path.join(here,'requirements.txt')) as f:
-    return f.read().split()
 
-REQUIREMENTS = find_dependencies()
+REQUIREMENTS = [
+    "boto3",
+    "click==7.0",
+    "click-log==0.3.2",
+    "sh",
+    "keyring",
+    "python-dateutil",
+    "bs4",
+    "simplejson",
+    "requests[security]",
+    "pyyaml",
+]
 
 setup(
     name='okta-aws-credential-helper',
