@@ -62,6 +62,7 @@ class Settings(object):
         self.user_name = config.get("user_name", '')
         self.password = config.get("password", '')
         self.google_2fa_totp = config.get("google_2fa_totp", '')
+        self.token_duration_second = 43200
 
     def save(self):
         with open(self.okta_aws_settings_path, 'w') as f:
@@ -322,12 +323,13 @@ def refresh_saml_resp(settings):
     return saml_dict
 
 
-def _get_sts_token(RoleArn, PrincipalArn, SAMLAssertion):
+def _get_sts_token(RoleArn, PrincipalArn, SAMLAssertion, DurationSeconds):
     log.debug("Getting STS temporary token for role '%s'", RoleArn)
     sts_client = boto3.session.Session(profile_name='okta-empty').client('sts')
     response = sts_client.assume_role_with_saml(RoleArn=RoleArn,
                                                 PrincipalArn=PrincipalArn,
-                                                SAMLAssertion=SAMLAssertion)
+                                                SAMLAssertion=SAMLAssertion,
+                                                DurationSeconds=DurationSeconds)
     Credentials = response['Credentials']
     return Credentials
 
@@ -366,7 +368,8 @@ def _refresh_credentials(role, settings):
         exit(1)
     aws_creds = _get_sts_token(role,
                                saml_dict['RoleArns'][role],
-                               saml_dict['SAMLAssertion'])
+                               saml_dict['SAMLAssertion'],
+                               settings.token_duration_second)
     aws_creds['Version'] = 1
     aws_creds['SecurityToken'] = aws_creds['SessionToken']
     aws_creds['_ExpireEpoch'] = aws_creds['Expiration'].timestamp()
