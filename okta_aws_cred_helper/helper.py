@@ -377,7 +377,7 @@ def _refresh_credentials(role, settings):
     return aws_creds
 
 
-def get_credential(role, settings, return_value=False):
+def get_credential(role, settings, return_value=False, format='json'):
     cache_file = os.path.join(settings.work_dir, get_role_key(role))
     creds_refreshed = True
     if os.path.isfile(cache_file):
@@ -392,7 +392,7 @@ def get_credential(role, settings, return_value=False):
                 if return_value:
                     return aws_creds
                 else:
-                    print(json.dumps(aws_creds, default=str))
+                    print_data(aws_creds, format=format)
                     return
         except:
             log.warning("Current cache '%s' does not seem valid. Need to refresh.", cache_file)
@@ -405,10 +405,21 @@ def get_credential(role, settings, return_value=False):
     if return_value:
         return aws_creds
     else:
-        print(json.dumps(aws_creds, default=str))
+        print_data(aws_creds, format=format)
 
+def print_data(aws_creds, format='json'):
+  if format == 'json':
+    print(json.dumps(aws_creds, default=str))
+  elif format == 'eval':
+    print("AWS_ACCESS_KEY_ID=%s ; export AWS_ACCESS_KEY_ID" % aws_creds['AccessKeyId'])
+    print("AWS_SECRET_ACCESS_KEY=%s ; export AWS_SECRET_ACCESS_KEY"  % aws_creds['SecretAccessKey'])
+    print("AWS_SECURITY_TOKEN=%s ; export AWS_SECURITY_TOKEN" % aws_creds['SessionToken'])
+    print("AWS_SESSION_TOKEN=%s ; export AWS_SESSION_TOKEN" % aws_creds['SessionToken'])
+    print("AWS_TEMP_KEY_EXPIRATION=%s ; export AWS_TEMP_KEY_EXPIRATION" % aws_creds['Expiration'])
+  else:
+    raise ValueError("Cannot print in format %s", format)
 
-def get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settings):
+def get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settings, format='json'):
     cache_file = os.path.join(settings.work_dir, get_role_key(to_role_arn))
     creds_refreshed = True
     if os.path.isfile(cache_file):
@@ -420,7 +431,7 @@ def get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settin
                 log.debug("Cached credential expired. Need to refresh.")
             else:
                 creds_refreshed = False
-                print(json.dumps(aws_creds, default=str))
+                print_data(aws_creds, format=format)
                 return
         except:
             log.warning("Current cache '%s' does not seem valid. Need to refresh.", cache_file)
@@ -443,9 +454,9 @@ def get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settin
     aws_creds['_ExpireEpoch'] = aws_creds['Expiration'].timestamp()
     if creds_refreshed:
         with open(cache_file, 'w') as f:
-            f.write(json.dumps(aws_creds, default=str))
+            f.write(print_data(aws_creds, format=format))
         os.chmod(cache_file, mode=0o600)
-    print(json.dumps(aws_creds, default=str))
+    print_data(aws_creds, format)
 
 @cli.command()
 @click.pass_obj
@@ -484,7 +495,15 @@ def assume_role(settings, from_role_arn, from_profile, to_role_arn):
     if from_role_arn and from_profile:
         log.error("Can't provide both from-role-arn and from-profile.")
         sys.exit(1)
-    get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settings)
+    get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settings, format='json')
+
+@cli.command()
+@click.pass_obj
+@click_log.simple_verbosity_option(log)
+@click.option('--role-arn', help='The AWS Role Arn to get temporary credential of.')
+def export_cred(settings, role_arn):
+    get_credential(role_arn, settings, format='eval')
+
 
 
 if __name__ == '__main__':
