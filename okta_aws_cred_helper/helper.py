@@ -411,11 +411,16 @@ def print_data(aws_creds, format='json'):
   if format == 'json':
     print(json.dumps(aws_creds, default=str))
   elif format == 'eval':
-    print("AWS_ACCESS_KEY_ID=%s ; export AWS_ACCESS_KEY_ID" % aws_creds['AccessKeyId'])
-    print("AWS_SECRET_ACCESS_KEY=%s ; export AWS_SECRET_ACCESS_KEY"  % aws_creds['SecretAccessKey'])
-    print("AWS_SECURITY_TOKEN=%s ; export AWS_SECURITY_TOKEN" % aws_creds['SessionToken'])
-    print("AWS_SESSION_TOKEN=%s ; export AWS_SESSION_TOKEN" % aws_creds['SessionToken'])
-    print("AWS_TEMP_KEY_EXPIRATION=%s ; export AWS_TEMP_KEY_EXPIRATION" % aws_creds['Expiration'])
+    print("AWS_ACCESS_KEY_ID='%s' ; export AWS_ACCESS_KEY_ID" % aws_creds['AccessKeyId'])
+    print("AWS_SECRET_ACCESS_KEY='%s' ; export AWS_SECRET_ACCESS_KEY"  % aws_creds['SecretAccessKey'])
+    print("AWS_SECURITY_TOKEN='%s' ; export AWS_SECURITY_TOKEN" % aws_creds['SessionToken'])
+    print("AWS_SESSION_TOKEN='%s' ; export AWS_SESSION_TOKEN" % aws_creds['SessionToken'])
+    print("AWS_TEMP_KEY_EXPIRATION='%s' ; export AWS_TEMP_KEY_EXPIRATION" % aws_creds['Expiration'])
+  elif format == 'aws':
+    print('[default]')
+    print("aws_access_key_id = %s"  % aws_creds['SecretAccessKey'])
+    print("aws_secret_access_key = %s" % aws_creds['SecretAccessKey'])
+    print("aws_session_token = %s " % aws_creds['SessionToken'])
   else:
     raise ValueError("Cannot print in format %s", format)
 
@@ -478,8 +483,10 @@ def refresh(settings):
 @click.pass_obj
 @click_log.simple_verbosity_option(log)
 @click.option('--role-arn', help='The AWS Role Arn to get temporary credential of.')
-def get_cred(settings, role_arn):
-    get_credential(role_arn, settings)
+@click.option('--format', help='Using which format. by default it is json (which is used by this program).',
+  default='json', type=click.Choice(['json', 'eval', 'aws']))
+def get_cred(settings, role_arn, format):
+    get_credential(role_arn, settings, format=format)
 
 
 @cli.command()
@@ -495,7 +502,7 @@ def assume_role(settings, from_role_arn, from_profile, to_role_arn):
     if from_role_arn and from_profile:
         log.error("Can't provide both from-role-arn and from-profile.")
         sys.exit(1)
-    get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settings, format='json')
+    get_assumed_role_credential(from_role_arn, from_profile, to_role_arn, settings)
 
 @cli.command()
 @click.pass_obj
@@ -503,7 +510,6 @@ def assume_role(settings, from_role_arn, from_profile, to_role_arn):
 @click.option('--role-arn', help='The AWS Role Arn to get temporary credential of.')
 def export_cred(settings, role_arn):
     get_credential(role_arn, settings, format='eval')
-
 
 
 if __name__ == '__main__':
