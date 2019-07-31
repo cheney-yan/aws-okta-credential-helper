@@ -418,7 +418,7 @@ def print_data(aws_creds, format='json'):
     print("AWS_TEMP_KEY_EXPIRATION='%s' ; export AWS_TEMP_KEY_EXPIRATION" % aws_creds['Expiration'])
   elif format == 'aws':
     print('[default]')
-    print("aws_access_key_id = %s"  % aws_creds['SecretAccessKey'])
+    print("aws_access_key_id = %s"  % aws_creds['AccessKeyId'])
     print("aws_secret_access_key = %s" % aws_creds['SecretAccessKey'])
     print("aws_session_token = %s " % aws_creds['SessionToken'])
   else:

@@ -2,6 +2,7 @@ language: python
 python:
 - '3.6'
 deploy:
+  distributions: "egg_info sdist bdist_wheel"
   provider: pypi
   user: cheneyyan
   password:
